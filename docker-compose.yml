@@ -1,0 +1,51 @@
+services:
+  mongo-database:
+    image: mongo:7.0.0
+    container_name: mongo_database
+    ports:
+      - "4002:27017"
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  primes-database:
+      image: postgres:alpine
+      ports:
+        - "4003:5432"
+      environment:
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: primes
+    
+  history-database:
+      image: postgres:alpine
+      ports:
+        - "4008:5432"
+      environment:
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: history
+
+  prime-service:
+    image: prime-service
+    build:
+      context: ../prime-service
+      dockerfile: Dockerfile
+    container_name: prime-service
+    ports:
+      - "4000:3000"
+    environment:
+      - server.port=3000
+      - spring.datasource.url=jdbc:postgresql://primes-database:5432/primes
+      - spring.datasource.username=postgres
+      - spring.datasource.password=password
+      - spring.datasource.restart=no
+    depends_on:
+      - primes-database
+
+  rabbit-mq:
+    image: rabbitmq:3.12.4-management
+    container_name: rabbit-mq
+    ports:
+      - "4006:5672"
+      - "4007:15672"
+    restart: always
